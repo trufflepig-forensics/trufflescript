@@ -1,6 +1,9 @@
 {
   "name": "trufflescript",
-  "version": "0.1.1",
+  "version": "0.1.2",
+  "description": "Collection of small typescript utilities used across various projects",
+  "homepage": "https://github.com/trufflepig-forensics/trufflescript",
+  "license": "MPL-2.0",
   "packageManager": "yarn@3.3.1",
   "type": "module",
   "scripts": {
