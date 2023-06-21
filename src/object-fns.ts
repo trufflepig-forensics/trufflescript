@@ -64,9 +64,9 @@ export function notEquals<T>(
  */
 export function isEmpty(obj: object): boolean {
     for (const key in obj) {
-        if (Object.hasOwn(obj, key)) return true;
+        if (Object.hasOwn(obj, key)) return false;
     }
-    return false;
+    return true;
 }
 
 /**
