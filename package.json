@@ -1,6 +1,6 @@
 {
   "name": "trufflescript",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Collection of small typescript utilities used across various projects",
   "homepage": "https://github.com/trufflepig-forensics/trufflescript",
   "license": "MPL-2.0",
