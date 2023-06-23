@@ -9,10 +9,10 @@ export default defineConfig({
         minify: true,
         reportCompressedSize: true,
         lib: {
-            entry: "src/index.ts",
+            entry: ["src/index.ts", "src/router.ts"],
             name: "trufflescript",
-            formats: ["es", "umd"],
-            fileName: (format) => `trufflescript.${format}.js`,
+            formats: ["es"],
+            fileName: (_format, entryName) => `${entryName}.js`,
         },
         rollupOptions: {
             external: ["react", "react-dom"],

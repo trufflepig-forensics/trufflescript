@@ -37,9 +37,12 @@
   "source": "./src/index.ts",
   "exports": {
     ".": {
-      "import": "./dist/trufflescript.es.js",
-      "require": "./dist/trufflescript.umd.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./router": {
+      "import": "./dist/router.js",
+      "types": "./dist/router.d.ts"
     }
   }
 }
