@@ -59,6 +59,26 @@ export function notEquals<T>(
 }
 
 /**
+ * Access an object's field and populate it, if it isn't set yet.
+ *
+ * This is useful when the field's value is something like an array or object
+ * which is passed by reference and can be modified in place.
+ *
+ * @param obj the object to access
+ * @param key the key of the field to access
+ * @param insert the value to insert if the key isn't set yet or a function to produce the value lazily
+ */
+export function getOrInsert<T>(obj: Record<string, T>, key: string, insert: T | (() => T)): T {
+    let value = obj[key];
+    if (value === undefined) {
+        if (insert instanceof Function) value = insert();
+        else value = insert;
+        obj[key] = value
+    }
+    return value;
+}
+
+/**
  * Check if an object is empty
  * @param obj Object to check
  */
