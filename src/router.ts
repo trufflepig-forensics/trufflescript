@@ -1,3 +1,5 @@
+import React from "react";
+
 /** Configuration for defining {@link Route routes} */
 export interface RouteConfig<RenderResult, UrlParams extends object, HiddenParams extends object> {
     /**
@@ -251,3 +253,96 @@ export class Router<RenderResult> {
 
 /** Any type which provides a `toString` method i.e. most builtins */
 export type Stringable = {toString(): string};
+
+export class ReactRouter extends Router<React.ReactNode> {
+    protected component: React.ComponentType<RouterComponentProps> = () => null;
+
+    /** Assert that only one instance of `this.Component` is active at a time */
+    protected instances = 0;
+
+    get Component(): React.ComponentType<RouterComponentProps> {
+        return this.component;
+    }
+
+    finish() {
+        super.finish();
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const ROUTER = this;
+        type RouterComponentState = { match: ReturnType<ReactRouter["match"]> };
+        this.component = class extends React.Component<RouterComponentProps, RouterComponentState>{
+            static displayName = "ReactRouter.Component";
+
+            state: RouterComponentState = {match: undefined};
+
+            hashChange = () => {
+                const rawPath = window.location.hash;
+
+                // Ensure well-formed path i.e. always have a #/
+                if (!rawPath.startsWith("#/")) {
+                    window.location.hash = "#/";
+
+                    // this method will be immediately triggered again
+                    return;
+                }
+
+                // Split everything after #/
+                const path = rawPath.substring(2).split("/");
+
+                // #/ should result in [] not [""]
+                if (path.length === 1 && path[0] === "") {
+                    path.shift();
+                }
+
+                this.setState({match: ROUTER.match(path)})
+            };
+
+            componentDidMount() {
+                window.addEventListener("hashchange", this.hashChange);
+                this.hashChange();
+
+                ROUTER.instances += 1;
+                if (ROUTER.instances > 1) console.error("Don't use a ReactRouter's Component more than once!");
+            }
+
+            componentWillUnmount() {
+                window.removeEventListener("hashchange", this.hashChange);
+
+                ROUTER.instances -= 1;
+                if (ROUTER.instances < 0) console.warn("`ReactRouter.instances` is buggy");
+            }
+
+            render() {
+                let contextValue: RouterContext = {route: undefined, params: undefined};
+
+                let content;
+                if (this.state.match !== undefined) {
+                    const [route, urlParams, hiddenParams] = this.state.match;
+                    contextValue = {route, params: urlParams};
+                    content = route.config.render(urlParams, hiddenParams);
+                } else {
+                    content = this.props.fallback;
+                }
+
+                const wrapped = this.props.children === undefined ? content : this.props.children(content);
+
+                return React.createElement(ROUTER_CONTEXT.Provider, {value: contextValue}, [wrapped]);
+            }
+        };
+    }
+}
+
+export type RouterComponentProps = {
+    fallback?: React.ReactNode,
+    children?: (content: React.ReactNode) => React.ReactNode,
+};
+
+export type RouterContext = {
+    readonly route: Route<React.ReactNode, object, object>;
+    readonly params: object;
+} | {
+    readonly route: undefined;
+    readonly params: undefined;
+};
+
+export const ROUTER_CONTEXT = React.createContext<RouterContext>({route: undefined, params: undefined});
+ROUTER_CONTEXT.displayName = "RouterContext";
