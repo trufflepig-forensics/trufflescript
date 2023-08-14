@@ -1,7 +1,15 @@
 import React from "react";
+import { ToString } from "./utility-types";
 
-/** Configuration for defining {@link Route routes} */
-export interface RouteConfig<RenderResult, UrlParams extends object, HiddenParams extends object> {
+/**
+ * Configuration for defining routes.
+ * @see Router.add
+ */
+export interface RouteConfig<
+    RenderResult,
+    UrlParams extends object,
+    HiddenParams extends object
+> {
     /**
      * The route's url as string
      *
@@ -29,7 +37,10 @@ export interface RouteConfig<RenderResult, UrlParams extends object, HiddenParam
      * @param hiddenParams parameters passed through the router
      * @return react element to show for this route
      */
-    render: (urlParams: UrlParams, hiddenParams: HiddenParams | undefined) => RenderResult;
+    render: (
+        urlParams: UrlParams,
+        hiddenParams: HiddenParams | undefined
+    ) => RenderResult;
 }
 
 /** Regex for a bind parameter in {@link RouteConfig.url `url`} */
@@ -51,7 +62,11 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
     /** ID the router identifies this route with */
     readonly id: number;
 
-    constructor(router: Router<RenderResult>, id: number, config: RouteConfig<RenderResult, UrlParams, HiddenParams>) {
+    constructor(
+        router: Router<RenderResult>,
+        id: number,
+        config: RouteConfig<RenderResult, UrlParams, HiddenParams>
+    ) {
         this.router = router;
         this.id = id;
         this.config = config;
@@ -68,19 +83,27 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
             if (typeof pattern === "string") continue;
 
             if (occurrence.has(pattern.bind)) {
-                this.errors.push(`The parameter '${String(pattern.bind)}' appears multiple times in the url pattern`);
+                this.errors.push(
+                    `The parameter '${String(
+                        pattern.bind
+                    )}' appears multiple times in the url pattern`
+                );
             } else {
                 occurrence.add(pattern.bind);
             }
 
             if (this.config.parser[pattern.bind] === undefined) {
-                this.errors.push(`The parameter '${String(pattern.bind)}' doesn't have a parser`);
+                this.errors.push(
+                    `The parameter '${String(pattern.bind)}' doesn't have a parser`
+                );
             }
         }
 
         for (const param of Object.keys(config.parser)) {
             if (!occurrence.has(param as keyof UrlParams)) {
-                this.errors.push(`The parameter '${String(param)}' does not appear in the url`);
+                this.errors.push(
+                    `The parameter '${String(param)}' does not appear in the url`
+                );
             }
         }
     }
@@ -90,7 +113,9 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
      *
      * @param url an url string which has been split at `/`
      */
-    match(url: Array<string>): { [Param in keyof UrlParams]: UrlParams[Param] } | undefined {
+    match(
+        url: Array<string>
+    ): { [Param in keyof UrlParams]: UrlParams[Param] } | undefined {
         if (url.length !== this.pattern.length) return;
 
         const params: { [Param in keyof UrlParams]?: UrlParams[Param] } = {};
@@ -119,7 +144,7 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
      * @param urlParams parameters to use
      * @return the constructed url
      */
-    build(urlParams: { [Param in keyof UrlParams]: Stringable }): string {
+    build(urlParams: { [Param in keyof UrlParams]: ToString }): string {
         return this.pattern
             .map((pattern) => {
                 if (typeof pattern === "string") return pattern;
@@ -134,7 +159,10 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
      * @param urlParams parameters to {@link build `build`} the url with
      * @param hiddenParams parameters to pass to the route's render method through the router instead of the url
      */
-    visit(urlParams: { [Param in keyof UrlParams]: Stringable }, hiddenParams: HiddenParams | undefined = undefined) {
+    visit(
+        urlParams: { [Param in keyof UrlParams]: ToString },
+        hiddenParams: HiddenParams | undefined = undefined
+    ) {
         const url = this.build(urlParams);
         this.router.setHiddenParams(this, hiddenParams);
         window.location.hash = `/${url}`;
@@ -148,19 +176,19 @@ class Route<RenderResult, UrlParams extends object, HiddenParams extends object>
      *
      * @param urlParams parameters to {@link build `build`} the url with
      */
-    open(urlParams: { [Param in keyof UrlParams]: Stringable }) {
+    open(urlParams: { [Param in keyof UrlParams]: ToString }) {
         const url = this.build(urlParams);
         window.open(`${window.location.origin}/#/${url}`);
     }
 
     /**
-     * Return a set of react click handler to make an element behave like a link
+     * Return a set of React click handler to make an element behave like a link
      *
      * i.e. left click to open in this tab, middle click to open in new tab
      *
      * @param urlParams parameters to {@link build `build`} the url with
      */
-    clickHandler(urlParams: { [Param in keyof UrlParams]: Stringable }) {
+    clickHandler(urlParams: { [Param in keyof UrlParams]: ToString }) {
         return {
             onClick: () => this.visit(urlParams),
             onAuxClick: () => this.open(urlParams),
@@ -206,7 +234,10 @@ export class Router<RenderResult> {
      * @param route to set parameters for
      * @param hiddenParams parameters to set
      */
-    setHiddenParams<UrlParams extends object, HiddenParams extends object>(route: Route<RenderResult, UrlParams, HiddenParams>, hiddenParams: HiddenParams | undefined) {
+    setHiddenParams<UrlParams extends object, HiddenParams extends object>(
+        route: Route<RenderResult, UrlParams, HiddenParams>,
+        hiddenParams: HiddenParams | undefined
+    ) {
         if (this !== route.router) {
             console.error("Routes are misconfigured");
             return;
@@ -220,7 +251,9 @@ export class Router<RenderResult> {
      * @param url url already split at "/"
      * @return the matched route and its parameters, if any
      */
-    match(url: Array<string>): [Route<RenderResult, object, object>, object, object | undefined] | undefined {
+    match(
+        url: Array<string>
+    ): [Route<RenderResult, object, object>, object, object | undefined] | undefined {
         // TODO this naive iter and check step by step could be improved by processing the list in `finish()`
         for (const route of this.routes) {
             const urlParams = route.match(url);
@@ -228,7 +261,8 @@ export class Router<RenderResult> {
 
             let hiddenParams = undefined;
             if (this.hiddenParam) {
-                if (this.hiddenParam.id === route.id) hiddenParams = this.hiddenParam.params;
+                if (this.hiddenParam.id === route.id)
+                    hiddenParams = this.hiddenParam.params;
                 else this.hiddenParam = undefined;
             }
 
@@ -251,15 +285,18 @@ export class Router<RenderResult> {
     }
 }
 
-/** Any type which provides a `toString` method i.e. most builtins */
-export type Stringable = {toString(): string};
-
 export class ReactRouter extends Router<React.ReactNode> {
+    /** Value for {@link ReactRouter.Component} which is properly initialised in {@link ReactRouter.finish} */
     protected component: React.ComponentType<RouterComponentProps> = () => null;
 
     /** Assert that only one instance of `this.Component` is active at a time */
     protected instances = 0;
 
+    /**
+     * The router's React component
+     *
+     * **Notice!** Don't have more than one instance of this component in your app at a time.
+     */
     get Component(): React.ComponentType<RouterComponentProps> {
         return this.component;
     }
@@ -268,32 +305,56 @@ export class ReactRouter extends Router<React.ReactNode> {
         super.finish();
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const ROUTER = this;
-        type RouterComponentState = { match: ReturnType<ReactRouter["match"]> };
-        this.component = class extends React.Component<RouterComponentProps, RouterComponentState>{
+
+        type RouterComponentState = {
+            match: ReturnType<ReactRouter["match"]>;
+            url: string;
+        };
+
+        this.component = class extends React.Component<
+            RouterComponentProps,
+            RouterComponentState
+        > {
             static displayName = "ReactRouter.Component";
 
-            state: RouterComponentState = {match: undefined};
+            state: RouterComponentState = { match: undefined, url: "" };
+            changeListener: Array<(event: LocationChangeEvent) => void> = [];
 
-            hashChange = () => {
-                const rawPath = window.location.hash;
+            hashChange = (event?: HashChangeEvent) => {
+                if (event !== undefined) {
+                    if (event.newURL === this.state.url) return;
 
-                // Ensure well-formed path i.e. always have a #/
-                if (!rawPath.startsWith("#/")) {
-                    window.location.hash = "#/";
+                    let prevented = false;
+                    for (const handler of this.changeListener) {
+                        handler({
+                            preventDefault() {
+                                prevented = true;
+                            },
+                        });
+                    }
 
-                    // this method will be immediately triggered again
-                    return;
+                    if (prevented) {
+                        const oldUrl = new URL(event.oldURL);
+                        window.location.hash = oldUrl.hash;
+                        return;
+                    }
                 }
 
-                // Split everything after #/
-                const path = rawPath.substring(2).split("/");
+                // Strip away a leading #/ and split at /
+                const rawPath = window.location.hash;
+                const match = rawPath.match(/^#\/?(.*)$/);
+                const path = (match && match[1].split("/")) || [];
 
                 // #/ should result in [] not [""]
                 if (path.length === 1 && path[0] === "") {
                     path.shift();
                 }
 
-                this.setState({match: ROUTER.match(path)})
+                this.setState({
+                    match: ROUTER.match(path),
+                    url: event?.newURL || window.location.href,
+                });
+                this.changeListener = [];
             };
 
             componentDidMount() {
@@ -301,48 +362,100 @@ export class ReactRouter extends Router<React.ReactNode> {
                 this.hashChange();
 
                 ROUTER.instances += 1;
-                if (ROUTER.instances > 1) console.error("Don't use a ReactRouter's Component more than once!");
+                if (ROUTER.instances > 1)
+                    console.error("Don't use a ReactRouter's Component more than once!");
             }
 
             componentWillUnmount() {
                 window.removeEventListener("hashchange", this.hashChange);
 
                 ROUTER.instances -= 1;
-                if (ROUTER.instances < 0) console.warn("`ReactRouter.instances` is buggy");
+                if (ROUTER.instances < 0)
+                    console.warn("`ReactRouter.instances` is buggy");
             }
 
             render() {
-                let contextValue: RouterContext = {route: undefined, params: undefined};
+                let contextValue: RouterContext = {
+                    route: undefined,
+                    params: undefined,
+                    addChangeListener: [].push.bind(this.changeListener),
+                };
 
                 let content;
                 if (this.state.match !== undefined) {
                     const [route, urlParams, hiddenParams] = this.state.match;
-                    contextValue = {route, params: urlParams};
+                    contextValue = {
+                        ...contextValue,
+                        route,
+                        params: urlParams,
+                    };
                     content = route.config.render(urlParams, hiddenParams);
                 } else {
                     content = this.props.fallback;
                 }
 
-                const wrapped = this.props.children === undefined ? content : this.props.children(content);
+                const wrapped =
+                    this.props.children === undefined
+                        ? content
+                        : this.props.children(content);
 
-                return React.createElement(ROUTER_CONTEXT.Provider, {value: contextValue}, [wrapped]);
+                return React.createElement(
+                    ROUTER_CONTEXT.Provider,
+                    { value: contextValue },
+                    [wrapped]
+                );
             }
         };
     }
 }
 
+/**
+ * Properties for the {@link ReactRouter.Component}
+ */
 export type RouterComponentProps = {
-    fallback?: React.ReactNode,
-    children?: (content: React.ReactNode) => React.ReactNode,
+    /**
+     * Content to render, when no route matched.
+     *
+     * Defaults to `undefined` which is ignored by React.
+     */
+    fallback?: React.ReactNode;
+
+    /**
+     * Convenience function to wrap the rendered route.
+     *
+     * This will also wrap the {@link RouterComponentProps.fallback `fallback`} if no route matched.
+     */
+    children?: (content: React.ReactNode) => React.ReactNode;
 };
 
-export type RouterContext = {
-    readonly route: Route<React.ReactNode, object, object>;
-    readonly params: object;
-} | {
-    readonly route: undefined;
-    readonly params: undefined;
+export type LocationChangeEvent = {
+    preventDefault(): void;
 };
 
-export const ROUTER_CONTEXT = React.createContext<RouterContext>({route: undefined, params: undefined});
+/**
+ * Value for the {@link ROUTER_CONTEXT `ROUTER_CONTEXT`}
+ */
+export type RouterContext = (
+    | {
+          readonly route: Route<React.ReactNode, object, object>;
+          readonly params: object;
+      }
+    | {
+          readonly route: undefined;
+          readonly params: undefined;
+      }
+) & {
+    addChangeListener(handler: (event: LocationChangeEvent) => void): void;
+};
+
+/**
+ * React context provided by the {@link ReactRouter.Component}
+ */
+export const ROUTER_CONTEXT = React.createContext<RouterContext>({
+    route: undefined,
+    params: undefined,
+    addChangeListener() {
+        /*noop*/
+    },
+});
 ROUTER_CONTEXT.displayName = "RouterContext";

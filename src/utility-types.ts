@@ -13,3 +13,8 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Class<Type> = { new (...args: any[]): Type };
+
+/**
+ * Any type which provides a `toString` method i.e. most builtins
+ */
+export type ToString = { toString(): string };
